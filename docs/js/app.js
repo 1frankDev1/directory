@@ -127,11 +127,11 @@ const views = {
 
     async handleLogin(e) {
         e.preventDefault();
-        let identifier = document.getElementById('login-email').value;
+        let identifier = document.getElementById('login-email').value.toLowerCase().trim();
         const password = document.getElementById('login-password').value;
 
         // Ensure valid email format for Supabase
-        if (!identifier.includes('@')) identifier += '@pastel.directory';
+        if (!identifier.includes('@')) identifier += '@user.local';
 
         try {
             await auth.signIn(identifier, password);
@@ -147,16 +147,17 @@ const views = {
         mainContent.innerHTML = `
             <div class="card" style="max-width: 400px; margin: 2rem auto;">
                 <h2 class="text-center">Registrarse</h2>
+                <p class="text-center" style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">Solo necesitas un usuario y contraseña</p>
                 <form id="signup-form" onsubmit="views.handleSignup(event)">
                     <div class="form-group">
-                        <label>Nombre de Usuario</label>
+                        <label>Usuario</label>
                         <input type="text" id="signup-user" required placeholder="Ej. juanito123">
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
-                        <input type="password" id="signup-password" required>
+                        <input type="password" id="signup-password" required minlength="6">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%">Registrarse</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%">Crear Cuenta</button>
                 </form>
                 <p class="text-center mt-4">¿Ya tienes cuenta? <a href="#login">Inicia sesión</a></p>
             </div>
@@ -168,12 +169,13 @@ const views = {
         const username = document.getElementById('signup-user').value;
         const password = document.getElementById('signup-password').value;
 
-        let identifier = username;
-        if (!identifier.includes('@')) identifier += '@pastel.directory';
+        // Simular email para Supabase pero mantenerlo invisible al usuario
+        let identifier = username.toLowerCase().trim();
+        if (!identifier.includes('@')) identifier += '@user.local';
 
         try {
             await auth.signUp(identifier, password, username);
-            app.showToast('Cuenta creada!');
+            app.showToast('¡Cuenta creada con éxito!');
             router.navigate('login');
         } catch (err) {
             app.showToast(err.message, 'error');
