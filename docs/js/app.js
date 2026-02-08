@@ -111,8 +111,8 @@ const views = {
                 <h2 class="text-center">Iniciar Sesión</h2>
                 <form id="login-form" onsubmit="views.handleLogin(event)">
                     <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="login-email" required>
+                        <label>Usuario</label>
+                        <input type="text" id="login-email" required placeholder="Tu nombre de usuario">
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
@@ -127,10 +127,14 @@ const views = {
 
     async handleLogin(e) {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
+        let identifier = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
+
+        // Ensure valid email format for Supabase
+        if (!identifier.includes('@')) identifier += '@pastel.directory';
+
         try {
-            await auth.signIn(email, password);
+            await auth.signIn(identifier, password);
             app.showToast('Bienvenido!');
             router.navigate('home');
         } catch (err) {
@@ -145,12 +149,8 @@ const views = {
                 <h2 class="text-center">Registrarse</h2>
                 <form id="signup-form" onsubmit="views.handleSignup(event)">
                     <div class="form-group">
-                        <label>Nombre Completo</label>
-                        <input type="text" id="signup-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="signup-email" required>
+                        <label>Nombre de Usuario</label>
+                        <input type="text" id="signup-user" required placeholder="Ej. juanito123">
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
@@ -165,12 +165,15 @@ const views = {
 
     async handleSignup(e) {
         e.preventDefault();
-        const name = document.getElementById('signup-name').value;
-        const email = document.getElementById('signup-email').value;
+        const username = document.getElementById('signup-user').value;
         const password = document.getElementById('signup-password').value;
+
+        let identifier = username;
+        if (!identifier.includes('@')) identifier += '@pastel.directory';
+
         try {
-            await auth.signUp(email, password, name);
-            app.showToast('Cuenta creada! Revisa tu email.');
+            await auth.signUp(identifier, password, username);
+            app.showToast('Cuenta creada!');
             router.navigate('login');
         } catch (err) {
             app.showToast(err.message, 'error');
