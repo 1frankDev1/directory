@@ -110,6 +110,12 @@ const views = {
             <div class="card" style="max-width: 400px; margin: 2rem auto;">
                 <h2 class="text-center">Iniciar Sesión</h2>
                 <form id="login-form" onsubmit="views.handleLogin(event)">
+                    <!--
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="login-email-actual">
+                    </div>
+                    -->
                     <div class="form-group">
                         <label>Usuario</label>
                         <input type="text" id="login-email" required placeholder="Tu nombre de usuario">
@@ -149,6 +155,16 @@ const views = {
                 <h2 class="text-center">Registrarse</h2>
                 <p class="text-center" style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">Solo necesitas un usuario y contraseña</p>
                 <form id="signup-form" onsubmit="views.handleSignup(event)">
+                    <!--
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="signup-name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="signup-email">
+                    </div>
+                    -->
                     <div class="form-group">
                         <label>Usuario</label>
                         <input type="text" id="signup-user" required placeholder="Ej. juanito123">
