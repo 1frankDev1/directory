@@ -1,0 +1,10 @@
+{
+  "name": "Pastel Directory",
+  "short_name": "Pastel",
+  "description": "Directorio profesional con estética pastel",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#fdf2f2",
+  "theme_color": "#93c5fd",
+  "icons": []
+}
