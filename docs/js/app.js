@@ -110,41 +110,42 @@ const views = {
             <div class="card" style="max-width: 400px; margin: 2rem auto;">
                 <h2 class="text-center">Iniciar Sesión</h2>
                 <form id="login-form" onsubmit="views.handleLogin(event)">
-                    <!--
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="login-email-actual">
-                    </div>
-                    -->
                     <div class="form-group">
                         <label>Usuario</label>
-                        <input type="text" id="login-email" required placeholder="Tu nombre de usuario">
+                        <input type="text" id="login-username" required placeholder="Tu usuario">
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
                         <input type="password" id="login-password" required>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%">Entrar</button>
+                    <button type="submit" id="btn-login" class="btn btn-primary" style="width: 100%">Entrar</button>
                 </form>
-                <p class="text-center mt-4">¿No tienes cuenta? <a href="#signup">Regístrate</a></p>
+                <p class="text-center mt-4">¿No tienes cuenta? <a href="#signup">Regístrate gratis</a></p>
             </div>
         `;
     },
 
     async handleLogin(e) {
         e.preventDefault();
-        let identifier = document.getElementById('login-email').value.toLowerCase().trim();
+        const btn = document.getElementById('btn-login');
+        btn.disabled = true;
+        btn.textContent = 'Entrando...';
+
+        let user = document.getElementById('login-username').value.toLowerCase().trim();
         const password = document.getElementById('login-password').value;
 
-        // Ensure valid email format for Supabase
-        if (!identifier.includes('@')) identifier += '@user.local';
+        // Formato interno para Supabase
+        const internalEmail = user.includes('@') ? user : `${user}@a.a`;
 
         try {
-            await auth.signIn(identifier, password);
-            app.showToast('Bienvenido!');
+            await auth.signIn(internalEmail, password);
+            app.showToast('¡Bienvenido!');
             router.navigate('home');
         } catch (err) {
-            app.showToast(err.message, 'error');
+            app.showToast(err.message === 'Invalid login credentials' ? 'Usuario o contraseña incorrectos' : err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Entrar';
         }
     },
 
@@ -153,27 +154,17 @@ const views = {
         mainContent.innerHTML = `
             <div class="card" style="max-width: 400px; margin: 2rem auto;">
                 <h2 class="text-center">Registrarse</h2>
-                <p class="text-center" style="font-size: 0.8rem; color: #666; margin-bottom: 1rem;">Solo necesitas un usuario y contraseña</p>
+                <p class="text-center" style="font-size: 0.9rem; color: #666; margin-bottom: 1.5rem;">Crea tu cuenta solo con un usuario</p>
                 <form id="signup-form" onsubmit="views.handleSignup(event)">
-                    <!--
-                    <div class="form-group">
-                        <label>Nombre Completo</label>
-                        <input type="text" id="signup-name">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="signup-email">
-                    </div>
-                    -->
                     <div class="form-group">
                         <label>Usuario</label>
-                        <input type="text" id="signup-user" required placeholder="Ej. juanito123">
+                        <input type="text" id="signup-username" required placeholder="Ej. juanito123">
                     </div>
                     <div class="form-group">
                         <label>Contraseña</label>
-                        <input type="password" id="signup-password" required minlength="6">
+                        <input type="password" id="signup-password" required minlength="6" placeholder="Mínimo 6 caracteres">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%">Crear Cuenta</button>
+                    <button type="submit" id="btn-signup" class="btn btn-primary" style="width: 100%">Crear Mi Cuenta</button>
                 </form>
                 <p class="text-center mt-4">¿Ya tienes cuenta? <a href="#login">Inicia sesión</a></p>
             </div>
@@ -182,19 +173,27 @@ const views = {
 
     async handleSignup(e) {
         e.preventDefault();
-        const username = document.getElementById('signup-user').value;
+        const btn = document.getElementById('btn-signup');
+        btn.disabled = true;
+        btn.textContent = 'Creando cuenta...';
+
+        const username = document.getElementById('signup-username').value.toLowerCase().trim();
         const password = document.getElementById('signup-password').value;
 
-        // Simular email para Supabase pero mantenerlo invisible al usuario
-        let identifier = username.toLowerCase().trim();
-        if (!identifier.includes('@')) identifier += '@user.local';
+        // Formato interno corto para evitar límites de longitud
+        const internalEmail = `${username}@a.a`;
 
         try {
-            await auth.signUp(identifier, password, username);
-            app.showToast('¡Cuenta creada con éxito!');
+            await auth.signUp(internalEmail, password, username);
+            app.showToast('¡Cuenta creada! Ya puedes entrar.');
             router.navigate('login');
         } catch (err) {
-            app.showToast(err.message, 'error');
+            let msg = err.message;
+            if (msg.includes('rate limit')) msg = 'Demasiados intentos. Por favor, espera un minuto.';
+            app.showToast(msg, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Crear Mi Cuenta';
         }
     },
 
