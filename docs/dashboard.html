@@ -60,6 +60,9 @@
                 <button class="tile tile-1x1 tile-orange" onclick="showSection('info')">
                     <div class="tile-content"><div class="tile-icon">🏪</div><span class="tile-title">Info</span></div>
                 </button>
+                <button class="tile tile-1x1 tile-blue" onclick="showSection('files')">
+                    <div class="tile-content"><div class="tile-icon">📁</div><span class="tile-title">Archivos</span></div>
+                </button>
             </div>
 
             <div id="section-details" class="mt-4" style="min-height: 400px; padding-top: 2rem;">
@@ -177,6 +180,7 @@
             else if (section === 'stats') renderStats();
             else if (section === 'info') renderInfo();
             else if (section === 'notes') renderNotes();
+            else if (section === 'files') renderFiles();
 
             details.scrollIntoView({ behavior: 'smooth' });
         }
@@ -372,6 +376,26 @@
             `;
         }
 
+        // --- FILES ---
+        async function renderFiles() {
+            const { data: files } = await supabaseClient.from('files').select('*').eq('business_id', myBusiness.id);
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <div class="flex" style="justify-content: space-between; margin-bottom: 1.5rem;">
+                    <h2>Galería y Archivos</h2>
+                    <button class="btn btn-primary" onclick="alert('Funcionalidad de subida requiere configurar Supabase Storage.')">Subir Archivo</button>
+                </div>
+                <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+                    ${files?.map(f => `
+                        <div class="card text-center">
+                            <div style="font-size: 2rem;">📄</div>
+                            <p style="font-size: 0.8rem; margin-top: 0.5rem; overflow: hidden; text-overflow: ellipsis;">${f.name}</p>
+                        </div>
+                    `).join('') || '<p>No hay archivos subidos.</p>'}
+                </div>
+            `;
+        }
+
         // --- INFO ---
         async function renderInfo() {
             const details = document.getElementById('section-details');
@@ -415,7 +439,10 @@
             };
         }
 
-        window.onload = initDashboard;
+        window.onload = async () => {
+            await window.authReady;
+            initDashboard();
+        };
     </script>
-</body>
+<script src="js/pwa.js"></script></body>
 </html>

@@ -78,7 +78,10 @@
             window.location.href = 'index.html';
         };
 
-        window.onload = loadAdminData;
+        window.onload = async () => {
+            await window.authReady;
+            loadAdminData();
+        };
     </script>
-</body>
+<script src="js/pwa.js"></script></body>
 </html>

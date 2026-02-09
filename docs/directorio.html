@@ -108,6 +108,16 @@
     <script src="js/auth-check.js"></script>
     <script>
         let currentCategory = null;
+        let userLocation = null;
+
+        function requestLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    loadBusinesses();
+                });
+            }
+        }
 
         async function loadCategories() {
             const { data: categories } = await supabaseClient.from('categories').select('*');
@@ -140,13 +150,23 @@
                 return;
             }
 
-            results.innerHTML = businesses.map(b => `
-                <div class="card business-card" onclick="viewProfile('${b.id}')">
-                    <img src="${b.logo_url || 'https://via.placeholder.com/300x180?text=Negocio'}" alt="${b.name}">
-                    <h3 style="margin-top: 1rem;">${b.name}</h3>
-                    <p class="text-muted" style="font-size: 0.9rem;">${b.address || 'Sin dirección'}</p>
-                </div>
-            `).join('');
+            results.innerHTML = businesses.map(b => {
+                let distHtml = '';
+                if (userLocation && b.latitude && b.longitude) {
+                    const dist = helpers.calculateDistance(userLocation.lat, userLocation.lng, b.latitude, b.longitude);
+                    distHtml = `<span class="badge" style="background: var(--pastel-blue); font-size: 0.7rem;">A ${dist.toFixed(1)} km</span>`;
+                }
+                return `
+                    <div class="card business-card" onclick="viewProfile('${b.id}')">
+                        <img src="${b.logo_url || 'https://via.placeholder.com/300x180?text=Negocio'}" alt="${b.name}">
+                        <div class="flex" style="justify-content: space-between; align-items: center; margin-top: 1rem;">
+                            <h3 style="margin: 0;">${b.name}</h3>
+                            ${distHtml}
+                        </div>
+                        <p class="text-muted" style="font-size: 0.9rem;">${b.address || 'Sin dirección'}</p>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function viewProfile(id) {
@@ -170,6 +190,8 @@
             const { data: services } = await supabaseClient.from('services').select('*').eq('business_id', id).eq('is_active', true);
             const { data: reviews } = await supabaseClient.from('reviews').select('*, profiles(full_name)').eq('business_id', id);
 
+            const avgRating = reviews?.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : 'N/A';
+
             let isFav = false;
             if (currentUser) {
                 const { data: fav } = await supabaseClient.from('favorites').select('*').eq('business_id', id).eq('user_id', currentUser.id).maybeSingle();
@@ -189,7 +211,10 @@
                             <img src="${b.logo_url || 'https://via.placeholder.com/100'}" style="width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; background: white;">
                             <div style="margin-left: 1rem; margin-bottom: 10px;">
                                 <h1 style="font-size: 2rem;">${b.name}</h1>
-                                <span class="badge" style="background: var(--pastel-pink); padding: 4px 10px; border-radius: 20px;">${b.categories?.name || 'Negocio'}</span>
+                                <div class="flex gap-2">
+                                    <span class="badge" style="background: var(--pastel-pink); padding: 4px 10px; border-radius: 20px;">${b.categories?.name || 'Negocio'}</span>
+                                    <span class="badge" style="background: #fbbf24; color: white; padding: 4px 10px; border-radius: 20px;">★ ${avgRating}</span>
+                                </div>
                             </div>
                         </div>
                         <button class="btn ${isFav ? 'btn-primary' : 'btn-outline'}" onclick="toggleFav('${b.id}', ${isFav})">
@@ -286,6 +311,8 @@
         }
 
         window.onload = async () => {
+            await window.authReady;
+            requestLocation();
             await loadCategories();
             const hash = window.location.hash;
             if (hash.startsWith('#profile=')) {
@@ -295,5 +322,5 @@
             }
         };
     </script>
-</body>
+<script src="js/pwa.js"></script></body>
 </html>
