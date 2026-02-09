@@ -1,17 +1,17 @@
 const CACHE_NAME = 'pastel-v2';
 const assets = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/signup.html',
-  '/directorio.html',
-  '/dashboard.html',
-  '/admin.html',
-  '/css/main.css',
-  '/css/dashboard.css',
-  '/js/supabase-config.js',
-  '/js/helpers.js',
-  '/js/auth-check.js',
+  './',
+  './index.html',
+  './login.html',
+  './signup.html',
+  './directorio.html',
+  './dashboard.html',
+  './admin.html',
+  './css/main.css',
+  './css/dashboard.css',
+  './js/supabase-config.js',
+  './js/helpers.js',
+  './js/auth-check.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
 ];
 

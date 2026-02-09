@@ -42,6 +42,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/helpers.js"></script>
+    <script src="js/auth-check.js"></script>
     <script>
         const loginForm = document.getElementById('login-form');
         const btnSubmit = document.getElementById('btn-submit');
@@ -51,9 +52,9 @@
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Verificando...';
 
-            const user = document.getElementById('username').value.toLowerCase().trim();
+            const userInput = document.getElementById('username').value.toLowerCase().trim();
             const password = document.getElementById('password').value;
-            const internalEmail = user.includes('@') ? user : `${user}@a.a`;
+            const internalEmail = userInput.includes('@') ? userInput : `${userInput}@a.a`;
 
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -63,8 +64,18 @@
 
                 if (error) throw error;
 
-                // Success
-                window.location.href = 'dashboard.html';
+                // After login, we need the profile to decide where to go
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profile) {
+                    redirectByRole(profile);
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
             } catch (err) {
                 let msg = err.message;
                 if (msg.includes('Invalid login credentials')) msg = 'Usuario o contraseña incorrectos';
@@ -81,5 +92,5 @@
             }
         });
     </script>
-</body>
+<script src="js/pwa.js"></script></body>
 </html>
