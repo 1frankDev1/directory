@@ -142,7 +142,11 @@ const views = {
             app.showToast('¡Bienvenido!');
             router.navigate('home');
         } catch (err) {
-            app.showToast(err.message === 'Invalid login credentials' ? 'Usuario o contraseña incorrectos' : err.message, 'error');
+            let msg = err.message;
+            if (msg.includes('Invalid login credentials')) msg = 'Usuario o contraseña incorrectos';
+            if (msg.toLowerCase().includes('email')) msg = msg.replace(/email/gi, 'usuario');
+            if (msg.includes('rate limit')) msg = 'Demasiados intentos. Por favor, espera un minuto.';
+            app.showToast(msg, 'error');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Entrar';
@@ -189,6 +193,7 @@ const views = {
             router.navigate('login');
         } catch (err) {
             let msg = err.message;
+            if (msg.toLowerCase().includes('email')) msg = msg.replace(/email/gi, 'usuario');
             if (msg.includes('rate limit')) msg = 'Demasiados intentos. Por favor, espera un minuto.';
             app.showToast(msg, 'error');
         } finally {
