@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta - Pastel Directory</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" id="logo">Pastel Directory</a>
+            <nav>
+                <a href="index.html">Inicio</a>
+                <a href="login.html">Entrar</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card" style="max-width: 400px; margin: 4rem auto;">
+            <h2 class="text-center">Únete a nosotros</h2>
+            <p class="text-center text-muted mb-4">Solo necesitas un usuario y contraseña</p>
+
+            <form id="signup-form">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="fullname" required placeholder="Ej. Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="username" required placeholder="Ej. juanito123">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Crear Cuenta</button>
+            </form>
+            <p class="text-center mt-4">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+        </div>
+    </main>
+
+    <div id="toast" class="hidden"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/helpers.js"></script>
+    <script>
+        const signupForm = document.getElementById('signup-form');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Creando cuenta...';
+
+            const fullname = document.getElementById('fullname').value;
+            const user = document.getElementById('username').value.toLowerCase().trim();
+            const password = document.getElementById('password').value;
+            const internalEmail = `${user}@a.a`;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: internalEmail,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullname
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                // Success
+                const toast = document.getElementById('toast');
+                toast.textContent = '¡Cuenta creada! Redirigiendo...';
+                toast.className = 'toast toast-success';
+                toast.classList.remove('hidden');
+
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+
+            } catch (err) {
+                let msg = err.message;
+                if (msg.toLowerCase().includes('email')) msg = msg.replace(/email/gi, 'usuario');
+                if (msg.includes('rate limit')) msg = 'Demasiados intentos. Por favor, espera un minuto.';
+
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.className = 'toast toast-error';
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 3000);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Crear Cuenta';
+            }
+        });
+    </script>
+</body>
+</html>

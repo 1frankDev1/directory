@@ -1,10 +1,21 @@
 {
   "name": "Pastel Directory",
   "short_name": "Pastel",
-  "description": "Directorio profesional con estética pastel",
-  "start_url": "index.html",
+  "description": "Directorio profesional SaaS con estética pastel",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#fdf2f2",
-  "theme_color": "#93c5fd",
-  "icons": []
+  "theme_color": "#60a5fa",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/60a5fa/ffffff?text=P",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/60a5fa/ffffff?text=Pastel",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
