@@ -8,6 +8,8 @@ const router = {
             'business': views.businessProfile,
             'dashboard': views.dashboard,
             'search': views.searchResults,
+            'register-business': views.registerBusiness,
+            'admin': views.admin,
         };
         window.addEventListener('hashchange', () => this.handleRoute());
         this.handleRoute();
@@ -49,10 +51,17 @@ const app = {
     updateAuthUI() {
         const authLinks = document.getElementById('auth-links');
         if (auth.user) {
-            authLinks.innerHTML = `
-                ${auth.isOwner() ? '<a href="#dashboard">Panel</a>' : ''}
-                <a href="#" onclick="auth.signOut()">Salir</a>
-            `;
+            let links = '';
+            if (auth.isAdmin()) {
+                links += '<a href="#admin">Admin</a>';
+            }
+            if (auth.isOwner()) {
+                links += '<a href="#dashboard">Panel</a>';
+            } else if (!auth.isAdmin()) {
+                links += '<a href="#register-business">Registrar Negocio</a>';
+            }
+            links += '<a href="#" onclick="auth.signOut()">Salir</a>';
+            authLinks.innerHTML = links;
         } else {
             authLinks.innerHTML = `
                 <a href="#login">Entrar</a>
@@ -359,6 +368,143 @@ const views = {
                                 🗺️ Mapa (Próximamente)
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    async registerBusiness() {
+        if (!auth.user) {
+            router.navigate('login');
+            return;
+        }
+        const mainContent = document.getElementById('main-content');
+        const { data: categories } = await supabaseClient.from('categories').select('*');
+
+        mainContent.innerHTML = `
+            <div class="card" style="max-width: 600px; margin: 2rem auto;">
+                <h2 class="text-center">Registrar mi Negocio</h2>
+                <p class="text-center mb-4">Empieza a gestionar tus servicios y clientes hoy mismo.</p>
+                <form id="register-biz-form" onsubmit="views.handleRegisterBusiness(event)">
+                    <div class="form-group">
+                        <label>Nombre del Negocio</label>
+                        <input type="text" id="reg-biz-name" required placeholder="Ej. Pastelería Central">
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="reg-biz-category" required>
+                            <option value="">Selecciona una categoría</option>
+                            ${categories?.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="reg-biz-addr" required placeholder="Calle Falsa 123">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción Corta</label>
+                        <textarea id="reg-biz-desc" rows="3" required placeholder="Cuéntanos qué ofreces..."></textarea>
+                    </div>
+                    <button type="submit" id="btn-reg-biz" class="btn btn-primary" style="width: 100%">Crear Mi Negocio</button>
+                </form>
+            </div>
+        `;
+    },
+
+    async handleRegisterBusiness(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-reg-biz');
+        btn.disabled = true;
+        btn.textContent = 'Creando...';
+
+        const payload = {
+            owner_id: auth.user.id,
+            name: document.getElementById('reg-biz-name').value,
+            category_id: document.getElementById('reg-biz-category').value,
+            address: document.getElementById('reg-biz-addr').value,
+            description: document.getElementById('reg-biz-desc').value,
+        };
+
+        try {
+            const { error: bizError } = await supabaseClient.from('businesses').insert([payload]);
+            if (bizError) throw bizError;
+
+            // Update user role to owner
+            const { error: roleError } = await supabaseClient
+                .from('profiles')
+                .update({ role: 'owner' })
+                .eq('id', auth.user.id);
+            if (roleError) throw roleError;
+
+            // Refresh profile in memory
+            await auth.loadProfile();
+
+            app.showToast('¡Negocio registrado con éxito!');
+            router.navigate('dashboard');
+        } catch (err) {
+            app.showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Crear Mi Negocio';
+        }
+    },
+
+    async admin() {
+        if (!auth.isAdmin()) {
+            router.navigate('home');
+            return;
+        }
+        const mainContent = document.getElementById('main-content');
+
+        const { data: profiles } = await supabaseClient.from('profiles').select('*');
+        const { data: businesses } = await supabaseClient.from('businesses').select('*, profiles(full_name)');
+
+        mainContent.innerHTML = `
+            <h1>Panel Global de Administración</h1>
+
+            <div class="grid gap-6 mt-6" style="grid-template-columns: 1fr 1fr;">
+                <div class="card">
+                    <h2 class="mb-4">Usuarios (${profiles?.length || 0})</h2>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #eee; text-align: left;">
+                                    <th style="padding: 8px;">Nombre</th>
+                                    <th style="padding: 8px;">Rol</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${profiles?.map(p => `
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px;">${p.full_name}</td>
+                                        <td style="padding: 8px;"><span class="badge" style="background: #f3f4f6;">${p.role}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="mb-4">Negocios (${businesses?.length || 0})</h2>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #eee; text-align: left;">
+                                    <th style="padding: 8px;">Negocio</th>
+                                    <th style="padding: 8px;">Dueño</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${businesses?.map(b => `
+                                    <tr style="border-bottom: 1px solid #eee;">
+                                        <td style="padding: 8px;">${b.name}</td>
+                                        <td style="padding: 8px;">${b.profiles?.full_name || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
