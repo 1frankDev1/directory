@@ -27,10 +27,14 @@ const dashboard = {
 
         if (!biz) {
             mainContent.innerHTML = `
-                <div class="card text-center" style="margin-top: 2rem;">
-                    <h2>No tienes un negocio registrado</h2>
-                    <p>Si eres dueño de un negocio, contacta con soporte para activarlo.</p>
-                    <button class="btn btn-primary mt-4" onclick="router.navigate('home')">Volver al Inicio</button>
+                <div class="card text-center" style="margin-top: 2rem; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1.5rem;">🏪</div>
+                    <h2>Todavía no tienes un negocio</h2>
+                    <p style="color: #64748b; margin-bottom: 2rem;">Registra tu negocio para empezar a gestionar tus servicios, inventario y ver estadísticas.</p>
+                    <div class="flex gap-4" style="justify-content: center;">
+                        <button class="btn btn-primary" onclick="router.navigate('register-business')">Registrar Mi Negocio Now</button>
+                        <button class="btn btn-outline" onclick="router.navigate('home')">Volver al Inicio</button>
+                    </div>
                 </div>
             `;
             return;
