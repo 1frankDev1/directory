@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración Global - Pastel Directory</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" id="logo">Pastel Directory</a>
+            <nav id="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="admin.html">Admin</a>
+                <a href="#" id="logout-btn">Salir</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" style="padding: 2rem 0;">
+        <h1>Panel Administrativo</h1>
+        <p class="text-muted">Gestión global de usuarios y negocios registrados.</p>
+
+        <div class="grid mt-6" style="grid-template-columns: 1fr 1fr;">
+            <div class="card">
+                <h2>Usuarios</h2>
+                <div id="users-list" style="margin-top: 1rem;">
+                    <p>Cargando usuarios...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Negocios</h2>
+                <div id="biz-list" style="margin-top: 1rem;">
+                    <p>Cargando negocios...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script>
+        async function loadAdminData() {
+            if (!currentUser || currentProfile.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const { data: users } = await supabaseClient.from('profiles').select('*');
+            const { data: businesses } = await supabaseClient.from('businesses').select('*, profiles(full_name)');
+
+            const userList = document.getElementById('users-list');
+            userList.innerHTML = `
+                <table style="width:100%; text-align:left;">
+                    <thead><tr><th>Nombre</th><th>Rol</th></tr></thead>
+                    <tbody>
+                        ${users?.map(u => `<tr><td>${u.full_name}</td><td><span class="badge" style="background:#eee; padding:2px 5px; border-radius:4px;">${u.role}</span></td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            const bizList = document.getElementById('biz-list');
+            bizList.innerHTML = `
+                 <table style="width:100%; text-align:left;">
+                    <thead><tr><th>Negocio</th><th>Dueño</th></tr></thead>
+                    <tbody>
+                        ${businesses?.map(b => `<tr><td>${b.name}</td><td>${b.profiles?.full_name || 'N/A'}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        document.getElementById('logout-btn').onclick = async (e) => {
+            e.preventDefault();
+            await supabaseClient.auth.signOut();
+            window.location.href = 'index.html';
+        };
+
+        window.onload = loadAdminData;
+    </script>
+</body>
+</html>

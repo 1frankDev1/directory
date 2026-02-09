@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Pastel Directory</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" id="logo">Pastel Directory</a>
+            <nav>
+                <a href="index.html">Inicio</a>
+                <a href="signup.html">Registrarse</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card" style="max-width: 400px; margin: 4rem auto;">
+            <h2 class="text-center">Bienvenido de nuevo</h2>
+            <p class="text-center text-muted mb-4">Ingresa tus credenciales para acceder</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="username" required placeholder="Tu nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" id="btn-submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Entrar</button>
+            </form>
+            <p class="text-center mt-4">¿No tienes cuenta? <a href="signup.html">Crea una aquí</a></p>
+        </div>
+    </main>
+
+    <div id="toast" class="hidden"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/helpers.js"></script>
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Verificando...';
+
+            const user = document.getElementById('username').value.toLowerCase().trim();
+            const password = document.getElementById('password').value;
+            const internalEmail = user.includes('@') ? user : `${user}@a.a`;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: internalEmail,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                // Success
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                let msg = err.message;
+                if (msg.includes('Invalid login credentials')) msg = 'Usuario o contraseña incorrectos';
+                if (msg.toLowerCase().includes('email')) msg = msg.replace(/email/gi, 'usuario');
+
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.className = 'toast toast-error';
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 3000);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Entrar';
+            }
+        });
+    </script>
+</body>
+</html>

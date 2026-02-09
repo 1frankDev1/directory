@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Pastel Directory</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" id="logo">Pastel Directory</a>
+            <nav id="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="dashboard.html">Mi Panel</a>
+                <a href="#" id="logout-btn">Salir</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" style="padding: 2rem 0;">
+        <div id="no-business" class="hidden">
+            <div class="card text-center" style="padding: 3rem;">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem;">🏪</div>
+                <h2>Todavía no tienes un negocio</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Registra tu negocio para empezar a gestionar tus servicios y ver estadísticas.</p>
+                <button class="btn btn-primary" id="btn-create-business">Registrar Mi Negocio Ahora</button>
+            </div>
+        </div>
+
+        <div id="business-dashboard" class="hidden">
+            <div class="flex" style="justify-content: space-between; align-items: center;">
+                <h1>Panel de <span id="biz-name-display" style="color: var(--primary);">Negocio</span></h1>
+                <a id="public-link" href="#" target="_blank" class="btn btn-outline">Ver Perfil Público</a>
+            </div>
+
+            <div class="mosaic-grid">
+                <button class="tile tile-2x1 tile-blue" onclick="showSection('stats')">
+                    <div class="tile-content">
+                        <div class="tile-icon">📊</div>
+                        <div class="tile-info">
+                            <span class="tile-title">Estadísticas</span>
+                            <span class="tile-value" id="stat-views">...</span>
+                        </div>
+                    </div>
+                </button>
+                <button class="tile tile-1x1 tile-pink" onclick="showSection('services')">
+                    <div class="tile-content"><div class="tile-icon">✂️</div><span class="tile-title">Servicios</span></div>
+                </button>
+                <button class="tile tile-1x1 tile-green" onclick="showSection('promotions')">
+                    <div class="tile-content"><div class="tile-icon">🏷️</div><span class="tile-title">Promos</span></div>
+                </button>
+                <button class="tile tile-1x1 tile-yellow" onclick="showSection('inventory')">
+                    <div class="tile-content"><div class="tile-icon">📦</div><span class="tile-title">Stock</span></div>
+                </button>
+                <button class="tile tile-1x1 tile-purple" onclick="showSection('notes')">
+                    <div class="tile-content"><div class="tile-icon">📝</div><span class="tile-title">Notas</span></div>
+                </button>
+                <button class="tile tile-1x1 tile-orange" onclick="showSection('info')">
+                    <div class="tile-content"><div class="tile-icon">🏪</div><span class="tile-title">Info</span></div>
+                </button>
+            </div>
+
+            <div id="section-details" class="mt-4" style="min-height: 400px; padding-top: 2rem;">
+                <div class="card text-center" style="background: #f8fafc; border: 2px dashed #e2e8f0;">
+                    <p>Selecciona una opción del mosaico para gestionar tu negocio</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="registration-view" class="hidden">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h2>Registrar mi Negocio</h2>
+                <form id="register-form" style="margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label>Nombre del Negocio</label>
+                        <input type="text" id="reg-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="reg-category" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="reg-address" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción Corta</label>
+                        <textarea id="reg-desc" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%">Crear Negocio</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="hidden"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/helpers.js"></script>
+    <script src="js/auth-check.js"></script>
+    <script>
+        let myBusiness = null;
+
+        async function initDashboard() {
+            if (!currentUser) return;
+
+            const { data: biz } = await supabaseClient
+                .from('businesses')
+                .select('*')
+                .eq('owner_id', currentUser.id)
+                .maybeSingle();
+
+            if (!biz) {
+                document.getElementById('no-business').classList.remove('hidden');
+                loadCategories();
+            } else {
+                myBusiness = biz;
+                document.getElementById('business-dashboard').classList.remove('hidden');
+                document.getElementById('biz-name-display').textContent = biz.name;
+                document.getElementById('public-link').href = `directorio.html#profile=${biz.id}`;
+                loadQuickStats();
+            }
+        }
+
+        async function loadCategories() {
+            const { data: cats } = await supabaseClient.from('categories').select('*');
+            const select = document.getElementById('reg-category');
+            if (select) {
+                select.innerHTML = '<option value="">Selecciona una...</option>';
+                cats?.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            }
+        }
+
+        const createBizBtn = document.getElementById('btn-create-business');
+        if (createBizBtn) {
+            createBizBtn.onclick = () => {
+                document.getElementById('no-business').classList.add('hidden');
+                document.getElementById('registration-view').classList.remove('hidden');
+            };
+        }
+
+        const regForm = document.getElementById('register-form');
+        if (regForm) {
+            regForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const payload = {
+                    owner_id: currentUser.id,
+                    name: document.getElementById('reg-name').value,
+                    category_id: document.getElementById('reg-category').value,
+                    address: document.getElementById('reg-address').value,
+                    description: document.getElementById('reg-desc').value
+                };
+                const { error } = await supabaseClient.from('businesses').insert([payload]);
+                if (!error) {
+                    await supabaseClient.from('profiles').update({ role: 'owner' }).eq('id', currentUser.id);
+                    window.location.reload();
+                }
+            };
+        }
+
+        async function loadQuickStats() {
+            const { count } = await supabaseClient.from('statistics').select('*', { count: 'exact', head: true }).eq('business_id', myBusiness.id).eq('event_type', 'profile_view');
+            const statViews = document.getElementById('stat-views');
+            if (statViews) statViews.textContent = count || 0;
+        }
+
+        async function showSection(section) {
+            const details = document.getElementById('section-details');
+            details.innerHTML = '<p>Cargando...</p>';
+
+            if (section === 'services') renderServices();
+            else if (section === 'promotions') renderPromotions();
+            else if (section === 'inventory') renderInventory();
+            else if (section === 'stats') renderStats();
+            else if (section === 'info') renderInfo();
+            else if (section === 'notes') renderNotes();
+
+            details.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- SERVICES ---
+        async function renderServices() {
+            const { data: services } = await supabaseClient.from('services').select('*').eq('business_id', myBusiness.id);
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <div class="flex" style="justify-content: space-between; margin-bottom: 1.5rem;">
+                    <h2>Servicios</h2>
+                    <button class="btn btn-primary" onclick="addService()">+ Nuevo</button>
+                </div>
+                <div class="grid gap-4">
+                    ${services?.map(s => `
+                        <div class="card flex" style="justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${s.name}</strong> - <span>${helpers.formatCurrency(s.price)}</span>
+                            </div>
+                            <button class="btn btn-outline" onclick="deleteService('${s.id}')">Borrar</button>
+                        </div>
+                    `).join('') || '<p>No hay servicios.</p>'}
+                </div>
+            `;
+        }
+
+        async function addService() {
+            const name = prompt('Nombre del servicio:');
+            const price = prompt('Precio:');
+            if (name && price) {
+                await supabaseClient.from('services').insert([{
+                    business_id: myBusiness.id,
+                    name,
+                    price: parseFloat(price),
+                    is_active: true
+                }]);
+                renderServices();
+            }
+        }
+
+        async function deleteService(id) {
+            if (confirm('¿Borrar servicio?')) {
+                await supabaseClient.from('services').delete().eq('id', id);
+                renderServices();
+            }
+        }
+
+        // --- PROMOTIONS ---
+        async function renderPromotions() {
+            const { data: promos } = await supabaseClient.from('promotions').select('*').eq('business_id', myBusiness.id);
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <div class="flex" style="justify-content: space-between; margin-bottom: 1.5rem;">
+                    <h2>Promociones</h2>
+                    <button class="btn btn-primary" onclick="addPromo()">+ Nueva Promo</button>
+                </div>
+                <div class="grid gap-4">
+                    ${promos?.map(p => `
+                        <div class="card flex" style="justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${p.title}</strong> (${p.type})
+                                <p style="font-size: 0.8rem; color: #666;">${p.description || ''}</p>
+                            </div>
+                            <button class="btn btn-outline" onclick="deletePromo('${p.id}')">Borrar</button>
+                        </div>
+                    `).join('') || '<p>No hay promociones activas.</p>'}
+                </div>
+            `;
+        }
+
+        async function addPromo() {
+            const title = prompt('Título de la promo:');
+            if (title) {
+                await supabaseClient.from('promotions').insert([{
+                    business_id: myBusiness.id,
+                    title,
+                    type: 'coupon',
+                    is_active: true
+                }]);
+                renderPromotions();
+            }
+        }
+
+        async function deletePromo(id) {
+            if (confirm('¿Borrar promo?')) {
+                await supabaseClient.from('promotions').delete().eq('id', id);
+                renderPromotions();
+            }
+        }
+
+        // --- INVENTORY ---
+        async function renderInventory() {
+            const { data: items } = await supabaseClient.from('inventory').select('*').eq('business_id', myBusiness.id);
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <div class="flex" style="justify-content: space-between; margin-bottom: 1.5rem;">
+                    <h2>Inventario</h2>
+                    <button class="btn btn-primary" onclick="addInventoryItem()">+ Añadir Item</button>
+                </div>
+                <div class="grid gap-4">
+                    ${items?.map(i => `
+                        <div class="card flex" style="justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${i.name}</strong>
+                                <p style="font-size: 0.85rem; color: #666;">Cantidad: ${i.quantity}</p>
+                            </div>
+                            <span class="badge" style="background: var(--pastel-yellow);">${i.status}</span>
+                        </div>
+                    `).join('') || '<p>Sin items en stock.</p>'}
+                </div>
+            `;
+        }
+
+        async function addInventoryItem() {
+            const name = prompt('Nombre del item:');
+            const qty = prompt('Cantidad:');
+            if (name && qty) {
+                await supabaseClient.from('inventory').insert([{
+                    business_id: myBusiness.id,
+                    name,
+                    quantity: parseInt(qty),
+                    status: 'available'
+                }]);
+                renderInventory();
+            }
+        }
+
+        // --- NOTES ---
+        async function renderNotes() {
+            const { data: notes } = await supabaseClient.from('notes').select('*').eq('business_id', myBusiness.id);
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <div class="flex" style="justify-content: space-between; margin-bottom: 1.5rem;">
+                    <h2>Notas Internas</h2>
+                    <button class="btn btn-primary" onclick="addNote()">+ Nueva Nota</button>
+                </div>
+                <div class="grid gap-4">
+                    ${notes?.map(n => `
+                        <div class="card">
+                            <h3>${n.title}</h3>
+                            <p style="margin-top: 0.5rem; font-size: 0.9rem;">${n.content}</p>
+                            <button class="btn btn-outline" style="margin-top: 1rem; padding: 4px 8px; font-size: 0.8rem;" onclick="deleteNote('${n.id}')">Borrar</button>
+                        </div>
+                    `).join('') || '<p>No hay notas guardadas.</p>'}
+                </div>
+            `;
+        }
+
+        async function addNote() {
+            const title = prompt('Título:');
+            const content = prompt('Contenido:');
+            if (title && content) {
+                await supabaseClient.from('notes').insert([{
+                    business_id: myBusiness.id,
+                    user_id: currentUser.id,
+                    title,
+                    content
+                }]);
+                renderNotes();
+            }
+        }
+
+        async function deleteNote(id) {
+            if (confirm('¿Borrar nota?')) {
+                await supabaseClient.from('notes').delete().eq('id', id);
+                renderNotes();
+            }
+        }
+
+        // --- STATS ---
+        async function renderStats() {
+            const { data: stats } = await supabaseClient.from('statistics').select('*').eq('business_id', myBusiness.id);
+            const counts = { profile_view: 0, whatsapp_click: 0, call_click: 0, web_click: 0 };
+            stats?.forEach(s => counts[s.event_type]++);
+
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <h2>Estadísticas Detalladas</h2>
+                <div class="grid mt-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="card text-center" style="background: var(--pastel-blue);">
+                        <h3>Vistas Perfil</h3>
+                        <p style="font-size: 2rem; font-weight: 800;">${counts.profile_view}</p>
+                    </div>
+                    <div class="card text-center" style="background: var(--pastel-green);">
+                        <h3>WhatsApp</h3>
+                        <p style="font-size: 2rem; font-weight: 800;">${counts.whatsapp_click}</p>
+                    </div>
+                    <div class="card text-center" style="background: var(--pastel-pink);">
+                        <h3>Llamadas</h3>
+                        <p style="font-size: 2rem; font-weight: 800;">${counts.call_click}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INFO ---
+        async function renderInfo() {
+            const details = document.getElementById('section-details');
+            details.innerHTML = `
+                <h2>Información del Negocio</h2>
+                <form id="info-form" class="mt-4">
+                    <div class="form-group">
+                        <label>WhatsApp</label>
+                        <input type="text" id="info-wa" value="${myBusiness.whatsapp || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Web</label>
+                        <input type="text" id="info-web" value="${myBusiness.website || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Logo URL</label>
+                        <input type="text" id="info-logo" value="${myBusiness.logo_url || ''}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </form>
+            `;
+            document.getElementById('info-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const payload = {
+                    whatsapp: document.getElementById('info-wa').value,
+                    website: document.getElementById('info-web').value,
+                    logo_url: document.getElementById('info-logo').value
+                };
+                await supabaseClient.from('businesses').update(payload).eq('id', myBusiness.id);
+                alert('Información actualizada');
+                window.location.reload();
+            };
+        }
+
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.onclick = async (e) => {
+                e.preventDefault();
+                await supabaseClient.auth.signOut();
+                window.location.href = 'index.html';
+            };
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

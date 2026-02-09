@@ -3,57 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Directorio Pastel - PWA</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/mosaic.css">
+    <title>Pastel Directory - Bienvenida</title>
+    <link rel="stylesheet" href="css/main.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#fdf2f2">
 </head>
 <body>
-    <div id="app">
-        <header id="main-header">
+    <header>
+        <div class="container">
+            <a href="index.html" id="logo">Pastel Directory</a>
+            <nav id="nav-links">
+                <a href="directorio.html">Directorio</a>
+                <span id="auth-links">
+                    <a href="login.html">Entrar</a>
+                    <a href="signup.html" class="btn btn-primary" style="color: white; margin-left: 1rem;">Empezar Gratis</a>
+                </span>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
             <div class="container">
-                <h1 id="logo">Pastel Directory</h1>
-                <nav id="nav-links">
-                    <a href="#" onclick="router.navigate('home')">Inicio</a>
-                    <span id="auth-links">
-                        <a href="#" onclick="router.navigate('login')">Login</a>
-                    </span>
-                </nav>
+                <h1>Tu negocio merece brillar</h1>
+                <p>El directorio profesional con estética pastel que conecta negocios locales con clientes que valoran el estilo y la calidad.</p>
+                <div class="flex gap-4" style="justify-content: center; display: flex;">
+                    <a href="directorio.html" class="btn btn-primary">Explorar Directorio</a>
+                    <a href="signup.html" class="btn btn-outline">Registrar Mi Negocio</a>
+                </div>
             </div>
-        </header>
+        </section>
 
-        <main id="main-content" class="container">
-            <!-- Dynamic content -->
-            <div id="loader">Cargando aplicación...</div>
-        </main>
-
-        <footer id="main-footer">
+        <section class="features" style="padding: 4rem 0; background: white;">
             <div class="container">
-                <p>&copy; 2025 Pastel Directory. Hecho con amor.</p>
+                <h2 style="text-align: center; margin-bottom: 3rem;">¿Por qué elegir Pastel Directory?</h2>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                    <div class="card text-center" style="background: var(--pastel-blue);">
+                        <div style="font-size: 3rem;">🎨</div>
+                        <h3 class="mt-2">Diseño Único</h3>
+                        <p>Olvídate de directorios genéricos. Nuestra interfaz pastel enamora a primera vista.</p>
+                    </div>
+                    <div class="card text-center" style="background: var(--pastel-pink);">
+                        <div style="font-size: 3rem;">📊</div>
+                        <h3 class="mt-2">Panel Pro</h3>
+                        <p>Gestiona servicios, inventario y estadísticas desde un dashboard intuitivo tipo mosaico.</p>
+                    </div>
+                    <div class="card text-center" style="background: var(--pastel-green);">
+                        <div style="font-size: 3rem;">📱</div>
+                        <h3 class="mt-2">Listo para PWA</h3>
+                        <p>Instala la aplicación en tu móvil como si fuera nativa. Rápida y siempre disponible.</p>
+                    </div>
+                </div>
             </div>
-        </footer>
-    </div>
+        </section>
+    </main>
 
-    <!-- Modals / Toast -->
-    <div id="toast" class="hidden"></div>
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Pastel Directory. Hecho con amor para negocios con estilo.</p>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
-    <script src="js/helpers.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/dashboard.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    console.log('SW registered');
-                }).catch(err => {
-                    console.log('SW registration failed', err);
-                });
-            });
-        }
-    </script>
+    <script src="js/auth-check.js"></script>
 </body>
 </html>
